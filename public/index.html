@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+	<title>Pong html5 Game</title>
+	<script src="js/jquery/jquery-1.4.2.min.js"></script>
+	<script src="js/jquery/plugins/jquery.hotkeys-0.7.9.js"></script>
+	<style type="text/css">
+		canvas {
+			background-color: #000;
+			position: fixed;
+			top	: 0;
+			left	: 0;
+			width	: 100%;
+			height	: 100%;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="viewport"></canvas>
+<script>
+/** return mouse position from dom event
+ * - http://www.quirksmode.org/js/events_properties.html#position
+*/
+var mouse_pos_get	= function(e){
+	var posx = 0;
+	var posy = 0;
+	if (!e) var e = window.event;
+	if (e.pageX || e.pageY) 	{
+		posx = e.pageX;
+		posy = e.pageY;
+	}
+	else if (e.clientX || e.clientY) 	{
+		posx = e.clientX + document.body.scrollLeft
+			+ document.documentElement.scrollLeft;
+		posy = e.clientY + document.body.scrollTop
+			+ document.documentElement.scrollTop;
+	}
+	return {
+		x	: posx,
+		y	: posy
+	}
+}
+jQuery(function(){
+	jQuery(document).bind('keydown', 'w',function(event){
+		console.log("w");
+		return false;
+	});
+	
+	var canvas	= document.getElementById('viewport');
+	var ctx		= canvas.getContext('2d');
+	var ctx_w	= 300;
+	var ctx_h	= 150;
+	var canvas_h	= $(canvas).height();
+	var racket_h	= 15;
+	var racket_w	= 5;
+	
+	/** Draw the net in the middle of the viewport
+	*/
+	var draw_net	= function(){
+		var net_w	= 1;
+		var dash_nb	= 15;
+		var dash_h	= ctx_h / dash_nb;
+		var dash_off	= 0.25*dash_h;
+		ctx.fillStyle	= "rgb(255,255,255)";
+		for(var i = 0; i < dash_nb; i++){
+			ctx.fillRect(ctx_w/2-net_w/2, i*dash_h, net_w, dash_h - dash_off);					
+		}
+	}
+	
+	draw_net();
+	
+	$(canvas).bind("mousemove", function(event){
+		var mouse_pos	= mouse_pos_get(event);
+		console.log("y=",mouse_pos.y);
+		// convert the pixel position in document into canvas coordinate
+		var mouse_y	= (mouse_pos.y / canvas_h) * ctx_h;
+
+		ctx.clearRect(10, 0, 5, ctx_h);
+		ctx.fillStyle = "rgb(255,255,255)";
+		ctx.fillRect(10, mouse_y-racket_h/2, racket_w, racket_h);
+	})
+})
+</script>
+</body>
+</html>
