@@ -163,19 +163,23 @@ var Game	= function(){
 	//////////////////////////////////////////////////////////////////////////
 	var userInputCtor	= function(){
 		var canvas	= document.getElementById('viewport');
+		var canvas_h	= $(canvas).height();
+		// this send a websocket message on *every* mousemove event...
+		// - may be uselessly flooding
 		jQuery(canvas).bind("mousemove", function(event){
 			var mouse_pos	= mouse_pos_get(event);
 			// convert the pixel position in element into [0,1]
 			var mouse_y	= mouse_pos.y / canvas_h;
-			var val = document.getElementById('text').value;
 			var msg_data	= {
-				type	: "userInput"
+				type	: "userInput",
 				data	: {
 					pos_y	: mouse_y
 				}
-			}
-			socket.send(JSON.stringify(msg_data));
-		}
+			};
+			var msg_json	= JSON.stringify(msg_data);
+			console.log("sending "+msg_json)
+			socket.send(msg_json);
+		});
 	}
 	
 	// call the constructor
