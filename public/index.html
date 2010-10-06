@@ -119,47 +119,151 @@ jQuery(function(){
 	}
 })
 
-var Game	= function(){
-	var socket	= null;
+
+var Renderer	= function(){
+	//////////////////////////////////////////////////////////////////////////
+	//		class variables						//
+	//////////////////////////////////////////////////////////////////////////
+	// private variables	
+	var canvas	= document.getElementById('viewport');
+	var ctx		= canvas.getContext('2d');
+	// TODO to replace with camel
+	var ctx_w	= 300;
+	var ctx_h	= 150;
+	var canvas_h	= $(canvas).height();
+	var racket_h	= 15;
+	var racket_w	= 5;
+	var racket_off	= 10;
+	
+	//////////////////////////////////////////////////////////////////////////
+	//		misc							//
+	//////////////////////////////////////////////////////////////////////////
+	/** Draw the net in the middle of the viewport
+	*/
+	var drawNet	= function(){
+		var net_w	= 1;
+		var dash_nb	= 15;
+		var dash_h	= ctx_h / dash_nb;
+		var dash_off	= 0.25*dash_h;
+		ctx.fillStyle	= "rgb(255,255,255)";
+		for(var i = 0; i < dash_nb; i++){
+			ctx.fillRect(ctx_w/2-net_w/2, i*dash_h, net_w, dash_h - dash_off);					
+		}
+	}
+	/** Draw score
+	*/
+	var drawScore	= function(score_l, score_r){
+		var score_off	= 20;
+		var score_y	= 20;
+		ctx.font    	=  '20px _sans';
+		ctx.fillStyle	= "rgb(255,255,255)";
+		ctx.textAlign	= 'center';
+		ctx.fillText(score_l, ctx_w/2-score_off, score_y);
+		ctx.fillText(score_r, ctx_w/2+score_off, score_y);		
+	}
+	/**
+	 * Draw ball
+	*/
+	var drawBall	= function(ball_x, ball_y){
+		var ball_w	= 3;
+		var ball_h	= 3;
+		ctx.fillStyle	= "rgb(255,255,255)";
+		ctx.fillRect(ball_x-ball_w/2, ball_y-ball_h/2, ball_w, ball_h);
+	}
+	/**
+	 * Draw a racket
+	*/
+	var drawRacket	= function(pos_y, left_right){
+		var pos_x	= racket_off;
+		if( left_right === "right" )	pos_x	= (ctx_w-1) - pos_x;
+
+		ctx.clearRect(pos_x - racket_w/2, 0, racket_w, ctx_h);
+		ctx.fillStyle = "rgb(255,255,255)";
+		ctx.fillRect(pos_x - racket_w/2, pos_y-racket_h/2, racket_w, racket_h);		
+	}
+	
+	var clearAll	= function(){
+		ctx.clearRect(0, 0, ctx_w, ctx_h);
+	}
 
 	//////////////////////////////////////////////////////////////////////////
+	//		misc							//
+	//////////////////////////////////////////////////////////////////////////
+	/**
+	 * Display the game from the gameCtx
+	 * - TODO optimize it. way too much is redrawn without needs
+	*/
+	var drawGameCtx	= function(gameCtx){
+		var ball	= gameCtx.ball;
+		var playerL	= gameCtx.players[0];
+		var playerR	= gameCtx.players[1];
+
+		clearAll();
+		drawNet();
+		drawBall(ball.x*ctx_w, ball.y*ctx_h);
+		drawRacket(playerL.y*ctx_h, 'left' );
+		drawRacket(playerR.y*ctx_h, 'right');
+		drawScore(playerL.score, playerR.score);
+	}
+	
+	//////////////////////////////////////////////////////////////////////////
+	//		run initialisation					//
+	//////////////////////////////////////////////////////////////////////////
+	// return public properties
+	return {
+		drawGameCtx	: drawGameCtx
+	}
+}
+
+var Game	= function Game(){
+	//////////////////////////////////////////////////////////////////////////
+	//		class variables						//
+	//////////////////////////////////////////////////////////////////////////
+	// private variables	
+	var socket	= null;
+	var renderer	= null;
+
 	//////////////////////////////////////////////////////////////////////////
 	//		ctor/dtor						//
-	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	var ctor	= function(){
 		socketCtor();
 		userInputCtor();
+		
+		renderer	= new Renderer();
 	}
 	var dtor	= function(){
 		
 	}
 	
 	//////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////
 	//		websocket						//
-	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	var socketCtor	= function(){
 		socket = new io.Socket('localhost', {port: 8080});
 		socket.on('connect', function(){
 			// connected
 			console.log("Websocket Connected to server");
+			console.dir(socket)
 		});
-		socket.on('message', onMessage);		
+		socket.on('disconnect', function(){
+			// connected
+			console.log("Websocket DISConnected to server");
+			console.dir(socket)
+		});
+		socket.on('message', socketOnMessage);		
 		socket.connect();
 	}
-	var onMessage	= function(message){
-		var data	= JSON.parse(message);
-		console.log('got some data');
-		console.dir(data);
+	var socketOnMessage	= function(msg_json){
+		var message	= JSON.parse(msg_json);
+		//console.log('got some data', message);
+		if( message.type == "gameCtx" ){
+			renderer.drawGameCtx(message.data)
+		}
 	}
 	
-	
-	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	//		userInput						//
-	//////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////
 	var userInputCtor	= function(){
 		var canvas	= document.getElementById('viewport');
@@ -173,25 +277,32 @@ var Game	= function(){
 			var msg_data	= {
 				type	: "userInput",
 				data	: {
-					pos_y	: mouse_y
+					y	: mouse_y
 				}
 			};
+			if( socket.connected === false ){
+				console.log("not sending event as not connected");
+				return;
+			}
 			var msg_json	= JSON.stringify(msg_data);
-			console.log("sending "+msg_json)
+			//console.log("sending "+msg_json)
 			socket.send(msg_json);
 		});
 	}
 	
-	// call the constructor
+	//////////////////////////////////////////////////////////////////////////
+	//		run initialisation					//
+	//////////////////////////////////////////////////////////////////////////
+	// call the contructor
 	ctor();	
-	// return the public function
-	return {
-		
+	// return public properties
+	return {		
 	}
 }
 
 jQuery(function(){
-	var game	= new Game();	
+	var game	= new Game();
+	console.log("slota=", game.constructor);
 });
 
 jQuery(function(){
@@ -202,7 +313,6 @@ jQuery(function(){
 		console.log("connected");
 	});
 	socket.on('message', function(message){
-		console.log("message="+message);
 		var data	= JSON.parse(message);
 		console.log('got some data');
 		console.dir(data);
