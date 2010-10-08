@@ -2,9 +2,21 @@
 <html lang="en">
 <head>
 	<title>test</title>
+	<script src="js/jquery/jquery-1.4.2.min.js"></script>
 </head>
 <body>
-	<iframe src="index.html" width="300" height="300" seamless></iframe>
-	<iframe src="index.html" width="300" height="300" seamless></iframe>
+	<script>
+	jQuery(function(){
+		var addIFrame	= function(){
+			$('<iframe>').attr({
+				'width'	: '500',
+				'height': '500',
+				'src'	: 'index.html'
+			}).appendTo('body');			
+		}
+		addIFrame();
+		setTimeout(addIFrame, 1*1000);
+	})
+	</script>
 </body>
 </html>
