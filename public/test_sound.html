@@ -1,0 +1,31 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+	<title>Pong html5 Game</title>
+	<script src="../vendor/soundmanager2/script/soundmanager2.js"></script>
+</head>
+<body>
+
+<script>
+soundManager.url = '../vendor/soundmanager2/swf'; // directory where SM2 .SWFs live
+// do this to skip flash block handling for now. See the flashblock demo when you want to start getting fancy.
+soundManager.useFlashBlock	= false;
+soundManager.debugMode		= false;
+soundManager.onready(function() {
+	// check if SM2 successfully loaded..
+	if (soundManager.supported()) {
+		// SM2 has loaded - now you can create and play sounds!
+		var mySound = soundManager.createSound({
+			id	: 'aSound',
+			url	: '../vendor/soundmanager2/demo/_mp3/click-high.mp3'
+			// onload: [ event handler function object ],
+			// other options here..
+		});
+		mySound.play();
+	} else {
+		// (Optional) Hrmm, SM2 could not start. Show an error, etc.?
+	}
+});
+</script>
+</body>
+</html>

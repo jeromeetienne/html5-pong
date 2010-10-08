@@ -3,7 +3,7 @@
 <head>
 	<title>Pong html5 Game</title>
 	<script src="js/jquery/jquery-1.4.2.min.js"></script>
-	<script src="js/jquery/plugins/jquery.hotkeys-0.7.9.js"></script>
+	<script src="../vendor/soundmanager2/script/soundmanager2.js"></script>
 	<style type="text/css">
 		canvas {
 			background-color: #000;
@@ -17,10 +17,20 @@
 	<script src="http://cdn.socket.io/stable/socket.io.js"></script>
 </head>
 <body>
-	<canvas id="viewport"></canvas>
+
+<canvas id="viewport"></canvas>
+
 <script>
+/**
+ * which sound for which event
+ * - mouseover2.mp3 for racket impact
+ * - mak.mp3 for ball loss
+ * - click-high for wall impact
+*/
+
 /** return mouse position from dom event
  * - http://www.quirksmode.org/js/events_properties.html#position
+ * - FIXME doesnt seems to resist to zoom
 */
 var mouse_pos_get	= function(e){
 	var posx = 0;
@@ -42,83 +52,74 @@ var mouse_pos_get	= function(e){
 	}
 }
 
-jQuery(function(){
-	return;
-	jQuery(document).bind('keydown', 'w',function(event){
-		console.log("w");
-		return false;
-	});
-	
-	var canvas	= document.getElementById('viewport');
-	var ctx		= canvas.getContext('2d');
-	var ctx_w	= 300;
-	var ctx_h	= 150;
-	var canvas_h	= $(canvas).height();
-	var racket_h	= 15;
-	var racket_w	= 5;
-	var racket_off	= 10;
-	
-	/** Draw the net in the middle of the viewport
-	*/
-	var draw_net	= function(){
-		var net_w	= 1;
-		var dash_nb	= 15;
-		var dash_h	= ctx_h / dash_nb;
-		var dash_off	= 0.25*dash_h;
-		ctx.fillStyle	= "rgb(255,255,255)";
-		for(var i = 0; i < dash_nb; i++){
-			ctx.fillRect(ctx_w/2-net_w/2, i*dash_h, net_w, dash_h - dash_off);					
+
+var Sounder	= function(){
+	//////////////////////////////////////////////////////////////////////////
+	//		class variables						//
+	//////////////////////////////////////////////////////////////////////////
+	// private variables	
+	var sounds		= {};
+	var soundsIdToUrl	= {
+		'racketImpact'	: '../vendor/soundmanager2/demo/_mp3/mouseover2.mp3',
+		'wallImpact'	: '../vendor/soundmanager2/demo/_mp3/click-high.mp3',
+		'ballLoss'	: '../vendor/soundmanager2/demo/_mp3/mak.mp3'
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//		ctor/dtor						//
+	//////////////////////////////////////////////////////////////////////////
+	var ctor	= function(){
+		soundManager.url = '../vendor/soundmanager2/swf'; // directory where SM2 .SWFs live
+		// do this to skip flash block handling for now. See the flashblock demo when you want to start getting fancy.
+		soundManager.useFlashBlock	= false;
+		soundManager.debugMode		= false;
+
+		soundManager.onready(soundManagerReady);
+	}
+	var dtor	= function(){
+		for(var soundId in soundsIdToUrl){
+			if( !sounds[soundId] )	continue;
+			sounds[soundId].destruct();
+		}
+		sounds	= {};
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//		Sound							//
+	//////////////////////////////////////////////////////////////////////////	
+	var soundManagerReady	= function(){
+		// check if SM2 successfully loaded..
+		if( !soundManager.supported() ){
+			alert("soundmanager is not supported. no sound")
+			return;
+		}
+		// create all sounds
+		// - TODO likely an autoload is needed
+		for(var soundId in soundsIdToUrl){
+			var url	= soundsIdToUrl[soundId];
+			sounds[soundId]	= soundManager.createSound({
+				id	: soundId,
+				url	: url,
+				autoLoad: true
+			});
 		}
 	}
-	/** Draw score
-	*/
-	var draw_score	= function(score_l, score_r){
-		var score_off	= 20;
-		var score_y	= 20;
-		ctx.font    	=  '20px _sans';
-		ctx.fillStyle	= "rgb(255,255,255)";
-		ctx.textAlign	= 'center';
-		ctx.fillText(score_l, ctx_w/2-score_off, score_y);
-		ctx.fillText(score_r, ctx_w/2+score_off, score_y);		
-	}
-	/**
-	 * Draw ball
-	*/
-	var draw_ball	= function(ball_x, ball_y){
-		var ball_w	= 3;
-		var ball_h	= 3;
-		ctx.fillStyle	= "rgb(255,255,255)";
-		ctx.fillRect(ball_x-ball_w/2, ball_y-ball_h/2, ball_w, ball_h);
-	}
-	/**
-	 * Draw a racket
-	*/
-	var draw_racket	= function(pos_y, left_right){
-		var pos_x	= racket_off;
-		if( left_right === "right" )	pos_x	= (ctx_w-1) - pos_x;
-
-		ctx.clearRect(pos_x - racket_w/2, 0, racket_w, ctx_h);
-		ctx.fillStyle = "rgb(255,255,255)";
-		ctx.fillRect(pos_x - racket_w/2, pos_y-racket_h/2, racket_w, racket_h);		
-	}
+	var play		= function(soundId){
+		if( !sounds[soundId] )	console.log("sound "+soundId+" isnt init");
+		if( !sounds[soundId] )	return;
+		sounds[soundId].play();
+	}	
 	
-	
-	if(true){
-		draw_net();
-		draw_score(0,0);
-		draw_ball(40,40);
-		jQuery(canvas).bind("mousemove", function(event){
-			var mouse_pos	= mouse_pos_get(event);
-			//console.log("y=",mouse_pos.y);
-			// convert the pixel position in document into canvas coordinate
-			var mouse_y	= (mouse_pos.y / canvas_h) * ctx_h;
-	
-			draw_racket(mouse_y, "left");
-			draw_racket(mouse_y, "right");
-		})
+	//////////////////////////////////////////////////////////////////////////
+	//		run initialisation					//
+	//////////////////////////////////////////////////////////////////////////
+	// call the contructor
+	ctor();
+	// return public properties
+	return {
+		play	: play
 	}
-})
-
+}
 
 var Renderer	= function(){
 	//////////////////////////////////////////////////////////////////////////
@@ -222,6 +223,7 @@ var Game	= function Game(){
 	// private variables	
 	var socket	= null;
 	var renderer	= null;
+	var sounder	= null;
 
 	//////////////////////////////////////////////////////////////////////////
 	//		ctor/dtor						//
@@ -231,6 +233,7 @@ var Game	= function Game(){
 		userInputCtor();
 		
 		renderer	= new Renderer();
+		sounder		= new Sounder();
 	}
 	var dtor	= function(){
 		
@@ -250,6 +253,7 @@ var Game	= function Game(){
 			// connected
 			console.log("Websocket DISConnected to server");
 			console.dir(socket)
+			sounder.play("racketImpact")
 		});
 		socket.on('message', socketOnMessage);		
 		socket.connect();
