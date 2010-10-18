@@ -1,0 +1,2 @@
+# remove all dynamically generated *.js with brequire	
+*.js
