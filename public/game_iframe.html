@@ -2,8 +2,17 @@
 <html lang="en">
 <head>
 	<title>Pong html5 Game</title>
+	<!-- system include -->
 	<script src="js/jquery/jquery-1.4.2.min.js"></script>
+	<script src='../vendor/brequire/lib/brequire.js'></script>	
+	<!-- To get Soundmanager -->
 	<script src="../vendor/soundmanager2/script/soundmanager2.js"></script>
+	<!-- To get socket.io from cdn -->
+	<script src="http://cdn.socket.io/stable/socket.io.js"></script>
+	<!-- local include -->
+	<script src="brequired_lib/state_machine.js"></script>
+	
+	<!-- basic full screen css for the canvas -->
 	<style type="text/css">
 		canvas {
 			background-color: #000;
@@ -14,13 +23,16 @@
 			height	: 100%;
 		}
 	</style>
-	<script src="http://cdn.socket.io/stable/socket.io.js"></script>
 </head>
 <body>
 
 <canvas id="viewport"></canvas>
 
 <script>
+
+// local dependancies
+var StateMachine= require('./state_machine');
+
 /**
  * which sound for which event
  * - mouseover2.mp3 for racket impact
@@ -231,6 +243,7 @@ var Game	= function Game(){
 	var ctor	= function(){
 		socketCtor();
 		userInputCtor();
+		stateCtor();
 		
 		renderer	= new Renderer();
 		sounder		= new Sounder();
@@ -238,7 +251,22 @@ var Game	= function Game(){
 	var dtor	= function(){
 		
 	}
-	
+
+	//////////////////////////////////////////////////////////////////////////
+	//		StateMachine						//
+	//////////////////////////////////////////////////////////////////////////
+	var state	= StateMachine.create();
+	var ST_INIT	= 0;
+	var stateCtor	= function(){
+		state.register(ST_INIT, stInitEnter, stInitLeave);
+	}
+	var stInitEnter	= function(){
+		
+	}
+	var stInitLeave	= function(){
+		
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	//		websocket						//
 	//////////////////////////////////////////////////////////////////////////
