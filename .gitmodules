@@ -4,3 +4,6 @@
 [submodule "vendor/soundmanager2"]
 	path = vendor/soundmanager2
 	url = http://github.com/scottschiller/SoundManager2.git
+[submodule "vendor/brequire"]
+	path = vendor/brequire
+	url = http://github.com/weepy/brequire.git
