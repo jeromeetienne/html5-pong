@@ -1,3 +1,6 @@
 [submodule "vendor/socket.io-node"]
 	path = vendor/socket.io-node
 	url = http://github.com/LearnBoost/Socket.IO-node.git
+[submodule "vendor/soundmanager2"]
+	path = vendor/soundmanager2
+	url = http://github.com/scottschiller/SoundManager2.git
