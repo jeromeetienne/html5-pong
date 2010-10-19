@@ -5,6 +5,9 @@ BREQUIRE_ROOT	= vendor/brequire
 
 all:	clean brequire
 
+server:
+	(cd lib && node server.js)
+
 brequire:
 	$(BREQUIRE_ROOT)/bin/brequire lib/ public/brequired_lib
 
