@@ -11,6 +11,7 @@
 	<script src="http://cdn.socket.io/stable/socket.io.js"></script>
 	<!-- local include -->
 	<script src="brequired_lib/state_machine.js"></script>
+	<script src="brequired_lib/game_state.js"></script>
 	<script src="brequired_lib/msg_type.js"></script>
 	
 	<!-- basic full screen css for the canvas -->
@@ -33,6 +34,7 @@
 
 // local dependancies
 var StateMachine= require('./state_machine');
+var GameState	= require('./game_state');
 var MsgType	= require('./msg_type');
 
 /**
@@ -221,12 +223,34 @@ var Renderer	= function(){
 		drawScore(playerL.score, playerR.score);
 	}
 	
+	/** Draw Presentation Page
+	*/
+	var drawPresPage	= function(){
+		ctx.font    	=  '20px _sans';
+		ctx.fillStyle	= "rgb(255,255,255)";
+		ctx.textAlign	= 'center';
+		ctx.fillText("HTML5 Pong", ctx_w/2, ctx_h/2);
+	}
+	/** Draw Game Ready
+	*/
+	var drawGameReady	= function(subTitle){
+		ctx.font    	=  '20px _sans';
+		ctx.fillStyle	= "rgb(255,255,255)";
+		ctx.textAlign	= 'center';
+		var font_h	= 25;
+		ctx.fillText("Players Ready", ctx_w/2, ctx_h/2);
+		ctx.fillText(subTitle, ctx_w/2, ctx_h/2 + font_h*1);
+	}
+	
 	//////////////////////////////////////////////////////////////////////////
 	//		run initialisation					//
 	//////////////////////////////////////////////////////////////////////////
 	// return public properties
 	return {
+		clearAll	: clearAll,
 		drawGameCtx	: drawGameCtx,
+		drawPresPage	: drawPresPage,
+		drawGameReady	: drawGameReady
 	}
 }
 
@@ -257,16 +281,33 @@ var Game	= function Game(){
 	//////////////////////////////////////////////////////////////////////////
 	//		StateMachine						//
 	//////////////////////////////////////////////////////////////////////////
-	var state	= StateMachine.create();
-	var ST_INIT	= 0;
+	var curState	= StateMachine.create();
 	var stateCtor	= function(){
-		state.register(ST_INIT, stInitEnter, stInitLeave);
+		curState.register(GameState.PRES_PAGE	, stPresPageEnter	, stPresPageLeave	);
+		curState.register(GameState.GAME_READY	, stGameReadyEnter	, stGameReadyEnter	);
 	}
-	var stInitEnter	= function(){
-		
+	var gotoState	= function(newState, args){
+		// close to debug
+		console.log("newState", newState, "args", args);
+		// change curState
+		curState.gotoState(newState, args);
 	}
-	var stInitLeave	= function(){
-		
+	var stPresPageEnter	= function(args){
+		console.log("prespage enter");
+		renderer.drawPresPage()
+	}
+	var stPresPageLeave	= function(){
+		console.log("prespage leave");		
+		renderer.clearAll()
+	}
+	var stGameReadyEnter	= function(args){
+		console.log("gameready enter", args, socketSessionId());
+		var side	= args[socketSessionId()];
+		renderer.drawGameReady("You are on the "+side);
+	}
+	var stGameReadyLeave	= function(){
+		console.log("gameready leave");		
+		renderer.clearAll()
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -290,12 +331,17 @@ var Game	= function Game(){
 	}
 	var socketOnMessage	= function(msg_json){
 		var message	= JSON.parse(msg_json);
-		//console.log('got some data', message);
+		console.log('got some data', message);
 		if( message.type == MsgType.GAME_CTX ){
 			renderer.drawGameCtx(message.data)
 		}else if( message.type == MsgType.STATE_CHANGE ){
-			
+			var newState	= message.data.newState;
+			var args	= message.data.args
+			gotoState(newState, args);
 		}
+	}
+	var socketSessionId	= function(){
+		return socket.transport.sessionid;
 	}
 	
 	//////////////////////////////////////////////////////////////////////////
@@ -341,21 +387,6 @@ jQuery(function(){
 	console.log("slota=", game.constructor);
 });
 
-jQuery(function(){
-	return;
-	socket = new io.Socket('localhost', {port: 8080});
-	socket.on('connect', function(){
-		// connected
-		console.log("connected");
-	});
-	socket.on('message', function(message){
-		var data	= JSON.parse(message);
-		console.log('got some data');
-		console.dir(data);
-	});
-	socket.connect();
-	socket.send('some data');
-})
 </script>
 </body>
 </html>
