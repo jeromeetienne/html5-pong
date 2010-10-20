@@ -11,6 +11,7 @@
 	<script src="http://cdn.socket.io/stable/socket.io.js"></script>
 	<!-- local include -->
 	<script src="brequired_lib/state_machine.js"></script>
+	<script src="brequired_lib/msg_type.js"></script>
 	
 	<!-- basic full screen css for the canvas -->
 	<style type="text/css">
@@ -32,6 +33,7 @@
 
 // local dependancies
 var StateMachine= require('./state_machine');
+var MsgType	= require('./msg_type');
 
 /**
  * which sound for which event
@@ -289,8 +291,10 @@ var Game	= function Game(){
 	var socketOnMessage	= function(msg_json){
 		var message	= JSON.parse(msg_json);
 		//console.log('got some data', message);
-		if( message.type == "gameCtx" ){
+		if( message.type == MsgType.GAME_CTX ){
 			renderer.drawGameCtx(message.data)
+		}else if( message.type == MsgType.STATE_CHANGE ){
+			
 		}
 	}
 	
