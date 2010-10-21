@@ -231,6 +231,13 @@ var Renderer	= function(){
 		ctx.textAlign	= 'center';
 		ctx.fillText("HTML5 Pong", ctx_w/2, ctx_h/2);
 	}
+	
+	var drawDisconnect	= function(){
+		ctx.font    	=  '20px _sans';
+		ctx.fillStyle	= "rgb(255,255,255)";
+		ctx.textAlign	= 'center';
+		ctx.fillText("Cant connect to the server", ctx_w/2, ctx_h/2);		
+	}
 	/** Draw Game Ready
 	*/
 	var drawGameReady	= function(subTitle){
@@ -250,7 +257,8 @@ var Renderer	= function(){
 		clearAll	: clearAll,
 		drawGameCtx	: drawGameCtx,
 		drawPresPage	: drawPresPage,
-		drawGameReady	: drawGameReady
+		drawGameReady	: drawGameReady,
+		drawDisconnect	: drawDisconnect
 	}
 }
 
@@ -321,13 +329,18 @@ var Game	= function Game(){
 			console.dir(socket)
 		});
 		socket.on('disconnect', function(){
-			// connected
-			console.log("Websocket DISConnected to server");
-			console.dir(socket)
-			sounder.play("racketImpact")
+			// display 
+			renderer.drawDisconnect();
+			// reload the page in 10sec
+			setTimeout(function(){
+				window.location.reload( false );
+			}, 10*1000)
 		});
-		socket.on('message', socketOnMessage);		
-		socket.connect();
+		socket.on('message', socketOnMessage);
+		socketConnect();
+	}
+	var socketConnect	= function(){
+		socket.connect();		
 	}
 	var socketOnMessage	= function(msg_json){
 		var message	= JSON.parse(msg_json);
@@ -384,7 +397,6 @@ var Game	= function Game(){
 
 jQuery(function(){
 	var game	= new Game();
-	console.log("slota=", game.constructor);
 });
 
 </script>
